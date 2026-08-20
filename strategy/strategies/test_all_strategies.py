@@ -16,7 +16,7 @@ from testing.backtesting.report import BacktestConfig
 from testing.utils.generators import random_walk_ohlcv, trending_market
 
 from trading.config.settings import AlgoSettings
-from trading.strategy.factory import registered_strategies
+from trading_strategy_sdk.factory import registered_strategies
 
 _ALL_STRATEGIES = list(registered_strategies().keys())
 

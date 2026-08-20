@@ -18,10 +18,10 @@ from trading.core.schemas import (
     SignalType,
     ValidatedOrderEvent,
 )
-from trading.risk.gates.circuit_breaker import CircuitBreakerGate
-from trading.risk.gates.daily_loss import DailyLossGate
-from trading.risk.gates.duplicate_position import DuplicatePositionGate
-from trading.risk.gates.time_cutoff import TimeCutoffGate
+from trading_risk_sdk.gates.circuit_breaker import CircuitBreakerGate
+from trading_risk_sdk.gates.daily_loss import DailyLossGate
+from trading_risk_sdk.gates.duplicate_position import DuplicatePositionGate
+from trading_risk_sdk.gates.time_cutoff import TimeCutoffGate
 from trading.risk.service.filter import RiskConfig, RiskFilter
 from trading.tick_ingest.service.ingestor import CircuitBreaker
 from trading.storage.cache import CacherFactory, ValueCache, setup_cache

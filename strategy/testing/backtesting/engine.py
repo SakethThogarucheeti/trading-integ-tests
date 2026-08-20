@@ -28,17 +28,17 @@ from trading.broker.service.paper_broker import PriceStore
 from trading.core.clock import SimulatedClock
 from trading.app.database import build_session_factory, init_db
 from trading.core.schemas import CandleEvent, InstrumentType
-from trading.di.providers.strategy import make_strategy
+from trading_strategy_sdk.factory import create_strategy
 from quantindicators.polars_store import PolarsStore
 from trading.strategy.service.generator import AlgoInstance, AlgoRunConfig, SignalGenerator
 from trading.candles.service.bar_accumulator import SymbolConfig
 from trading.execution.service.fill_handler import FillHandler
 from trading.execution.service.executor import ExecConfig, OrderExecutor
 from trading.execution.service.position_accountant import PositionAccountant
-from trading.risk.gates.circuit_breaker import CircuitBreakerGate
-from trading.risk.gates.daily_loss import DailyLossGate
-from trading.risk.gates.duplicate_position import DuplicatePositionGate
-from trading.risk.gates.time_cutoff import TimeCutoffGate
+from trading_risk_sdk.gates.circuit_breaker import CircuitBreakerGate
+from trading_risk_sdk.gates.daily_loss import DailyLossGate
+from trading_risk_sdk.gates.duplicate_position import DuplicatePositionGate
+from trading_risk_sdk.gates.time_cutoff import TimeCutoffGate
 from trading.risk.service.filter import RiskConfig, RiskFilter
 from trading.tick_ingest.service.ingestor import CircuitBreaker
 from trading.storage.cache import CacherFactory, ValueCache, setup_cache
@@ -151,7 +151,7 @@ class BacktestSession(TestingSession):
             # ------------------------------------------------------------------
             algo_instances: dict[str, AlgoInstance] = {
                 s: AlgoInstance(
-                    strategy=make_strategy(
+                    strategy=create_strategy(
                         algo.strategy_id, config.strategy_params or None, clock=sim_clock
                     ),
                     instrument_type=InstrumentType.EQUITY,
@@ -338,15 +338,23 @@ class BacktestSession(TestingSession):
 
         finally:
             # SignalGenerator schedules chart/state/signal writes via fire()
-            # (fire-and-forget asyncio tasks) rather than awaiting them
-            # inline, since live trading's Runtime stays up indefinitely and
-            # those tasks always get time to finish. BacktestSession's
-            # asyncio.run()-per-invocation lifecycle is short-lived, so any
-            # still-pending fire()'d task at this point would otherwise be
-            # torn down mid-write when the event loop closes, surfacing as
-            # unhandled-exception noise (or, if the loop wins the race
-            # first, a genuine lost write). Wait for them here instead.
-            pending = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+            # (fire-and-forget asyncio tasks, named "trading.fire" — see
+            # app/tasks.py) rather than awaiting them inline, since live
+            # trading's Runtime stays up indefinitely and those tasks always
+            # get time to finish. BacktestSession's asyncio.run()-per-invocation
+            # lifecycle is short-lived, so any still-pending fire()'d task at
+            # this point would otherwise be torn down mid-write when the event
+            # loop closes, surfacing as unhandled-exception noise (or, if the
+            # loop wins the race first, a genuine lost write). Wait for them
+            # here instead — filtered strictly by name, not "every task on the
+            # loop": long-lived tasks (e.g. cashews' cache-expiry sweeper,
+            # lazily started by setup_cache()) also live on the loop and never
+            # finish on their own, so gathering one of those hangs forever.
+            pending = [
+                t
+                for t in asyncio.all_tasks()
+                if t is not asyncio.current_task() and t.get_name() == "trading.fire"
+            ]
             if pending:
                 await asyncio.gather(*pending, return_exceptions=True)
 

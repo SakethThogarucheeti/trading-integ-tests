@@ -17,7 +17,7 @@ from testing.backtesting.report import BacktestConfig
 from testing.backtesting.data_loader import FileDataLoader
 
 from trading.config.settings import AlgoSettings
-from trading.strategy.factory import registered_strategies
+from trading_strategy_sdk.factory import registered_strategies
 
 _DATA_DIR = Path(__file__).parents[3] / "trading-platform" / "data"
 _ALL_STRATEGIES = list(registered_strategies().keys())
