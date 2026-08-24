@@ -68,7 +68,10 @@ async def _run(config, pg_engine, tmp_path):
 
 async def test_backtest_completes_without_error(pg_engine, tmp_path):
     """A basic backtest run must complete and return a BacktestReport."""
-    df = trending_market(n_bars=500, drift=0.0003, start_price=1500.0, seed=42, start=_START)
+    # 250 bars: default warmup_candles is 200, so this leaves a modest margin
+    # of live bars without paying for hundreds of unneeded ones (each bar is
+    # a real Postgres round-trip through the full pipeline).
+    df = trending_market(n_bars=250, drift=0.0003, start_price=1500.0, seed=42, start=_START)
     config = BacktestConfig(
         algo=_algo(),
         start=_START,
@@ -87,7 +90,9 @@ async def test_backtest_completes_without_error(pg_engine, tmp_path):
 
 async def test_backtest_equity_curve_starts_at_initial_equity(pg_engine, tmp_path):
     """The first row of the equity curve must equal initial_equity."""
-    df = trending_market(n_bars=500, drift=0.0002, seed=1, start=_START)
+    # Only the equity curve's first row is asserted -- doesn't need bars
+    # beyond warmup(200) plus a small margin to prove the run completes.
+    df = trending_market(n_bars=220, drift=0.0002, seed=1, start=_START)
     config = BacktestConfig(
         algo=_algo("eq_start"),
         start=_START,
@@ -103,7 +108,7 @@ async def test_backtest_equity_curve_starts_at_initial_equity(pg_engine, tmp_pat
 
 async def test_backtest_metrics_in_valid_range(pg_engine, tmp_path):
     """Metric values must be in their expected ranges regardless of market data."""
-    df = random_walk_ohlcv(n_bars=500, seed=7, start=_START)
+    df = random_walk_ohlcv(n_bars=250, seed=7, start=_START)
     config = BacktestConfig(
         algo=_algo("metrics"),
         start=_START,
@@ -122,7 +127,8 @@ async def test_backtest_metrics_in_valid_range(pg_engine, tmp_path):
 
 async def test_backtest_crash_scenario_produces_drawdown(pg_engine, tmp_path):
     """A 30% crash mid-session should produce valid metrics regardless of trade count."""
-    df = crash_scenario(n_bars=500, crash_bar=250, crash_pct=0.30, seed=0, start=_START)
+    # crash_bar must land after warmup(200) with room on both sides.
+    df = crash_scenario(n_bars=280, crash_bar=230, crash_pct=0.30, seed=0, start=_START)
     config = BacktestConfig(
         algo=_algo("crash"),
         start=_START,
@@ -139,7 +145,9 @@ async def test_backtest_crash_scenario_produces_drawdown(pg_engine, tmp_path):
 
 async def test_backtest_trending_market_generates_signals(pg_engine, tmp_path):
     """A strong uptrend should trigger at least one EMA crossover signal."""
-    df = trending_market(n_bars=500, drift=0.001, start_price=1500.0, seed=10, start=_START)
+    # Kept larger than the other cases here: this one needs an actual
+    # crossover to fire post-warmup(200), not just a report to be produced.
+    df = trending_market(n_bars=350, drift=0.001, start_price=1500.0, seed=10, start=_START)
     config = BacktestConfig(
         algo=_algo("trending"),
         start=_START,
@@ -157,7 +165,7 @@ async def test_backtest_trending_market_generates_signals(pg_engine, tmp_path):
 
 async def test_backtest_html_report_generated(pg_engine, tmp_path):
     """BacktestReport.to_html() must return a non-empty HTML string with Plotly."""
-    df = trending_market(n_bars=300, drift=0.0003, seed=3, start=_START)
+    df = trending_market(n_bars=220, drift=0.0003, seed=3, start=_START)
     config = BacktestConfig(
         algo=_algo("html"),
         start=_START,
@@ -174,7 +182,7 @@ async def test_backtest_html_report_generated(pg_engine, tmp_path):
 
 async def test_backtest_session_report_persisted(pg_engine, tmp_path):
     """After run(), the report JSON and HTML must be written to results_dir."""
-    df = trending_market(n_bars=300, drift=0.0003, seed=5, start=_START)
+    df = trending_market(n_bars=220, drift=0.0003, seed=5, start=_START)
     config = BacktestConfig(
         algo=_algo("persist"),
         start=_START,
@@ -195,7 +203,13 @@ async def test_backtest_session_report_persisted(pg_engine, tmp_path):
 # ---------------------------------------------------------------------------
 
 _REAL_DATA_SYMBOLS = ["INFY", "TCS", "RELIANCE", "HDFCBANK", "ICICIBANK"]
-_REAL_START = datetime(2025, 6, 1, tzinfo=UTC)
+# ~6.5 weeks, not the full ~10.5 months of fetched history: this is the actual
+# dominant cost in this file (measured: the 5 test_ema_crossover_per_symbol
+# cases alone took ~4.5 of this file's ~5 minutes total, dwarfing every
+# synthetic-data test combined) and neither test here asserts a minimum trade
+# count -- both just need warmup_candles=200 (~8 trading days at 15min) plus
+# a real margin of live bars, not the full fetched range.
+_REAL_START = datetime(2026, 3, 1, tzinfo=UTC)
 _REAL_END = datetime(2026, 4, 17, tzinfo=UTC)
 _REAL_EQUITY = 10_000.0
 
