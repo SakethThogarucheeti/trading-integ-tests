@@ -48,7 +48,7 @@ from trading.execution.storage.store import TradingStore
 def _make_fill_handler(session_factory):
     setup_cache(None)
     accountant = PositionAccountant(
-        PositionStore(session_factory), CacherFactory(ValueCache(), SYSTEM_CLOCK)
+        PositionStore(session_factory), TradingStore(session_factory), CacherFactory(ValueCache(), SYSTEM_CLOCK)
     )
     return FillHandler(TradingStore(session_factory), accountant)
 
@@ -91,7 +91,6 @@ def _make_pipeline(session_factory, broker):
     position = PositionStore(session_factory)
 
     setup_cache(None)
-    factory = CacherFactory(ValueCache(), clock)
     risk_reg = RiskFilter(
         config=RiskConfig(
             equity=1_000_000.0,
@@ -107,7 +106,6 @@ def _make_pipeline(session_factory, broker):
         trading=trading,
         audit=audit,
         position=position,
-        factory=factory,
         clock=clock,
         circuit=CircuitBreaker(),
     )

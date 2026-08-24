@@ -55,7 +55,7 @@ async def _seed_position(session_factory, symbol: str, net_qty: int, avg_price: 
 def _make_accountant(session_factory) -> PositionAccountant:
     setup_cache(None)
     return PositionAccountant(
-        PositionStore(session_factory), CacherFactory(ValueCache(), SYSTEM_CLOCK)
+        PositionStore(session_factory), TradingStore(session_factory), CacherFactory(ValueCache(), SYSTEM_CLOCK)
     )
 
 

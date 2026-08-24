@@ -37,7 +37,9 @@ from helpers import seed_signal
 
 def _make_fill_handler(session_factory):
     setup_cache(None)
-    accountant = PositionAccountant(PositionStore(session_factory), CacherFactory(ValueCache(), SYSTEM_CLOCK))
+    accountant = PositionAccountant(
+        PositionStore(session_factory), TradingStore(session_factory), CacherFactory(ValueCache(), SYSTEM_CLOCK)
+    )
     return FillHandler(TradingStore(session_factory), accountant)
 
 

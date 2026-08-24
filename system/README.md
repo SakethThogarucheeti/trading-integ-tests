@@ -17,6 +17,7 @@ uv run pytest . -x -q
 | `test_risk_guardrails.py` | Risk controller enforcement: daily loss, position limits, intraday cutoff |
 | `test_broker_failure.py` | Circuit breaker behaviour on broker errors; retry logic |
 | `test_state_recovery.py` | Component state persistence and recovery after process failure |
+| `test_candle_store.py` | `CandleStore`/`CandleDataStore` Postgres round-trip: save/get, idempotent save, `get_candles_since` filtering, end-to-end EMA compute |
 
 ## Simulators
 

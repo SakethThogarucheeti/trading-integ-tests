@@ -56,7 +56,7 @@ def _make_paper_pair(
     """
     trading = TradingStore(session_factory)
     factory = _make_factory()
-    accountant = PositionAccountant(PositionStore(session_factory), factory)
+    accountant = PositionAccountant(PositionStore(session_factory), trading, factory)
     fill_handler = FillHandler(trading, accountant)
 
     # Placeholder broker so OrderExecutor can be constructed; replaced below.
@@ -205,9 +205,34 @@ async def test_position_updated_after_fill(engine, session_factory):
     assert pos.net_qty == 10
 
 
+async def test_handle_fill_unknown_order_creates_no_position(engine, session_factory):
+    """A fill postback for an order this process never placed must be a no-op, not a crash."""
+    exec_reg = _make_direct_executor(session_factory, _NullRealBroker())
+
+    await exec_reg.handle_fill(
+        kite_order_id="GHOST_ORDER",
+        avg_price=1500.0,
+        filled_qty=10,
+        symbol="INFY",
+        instrument_type="EQUITY",
+        side="BUY",
+    )
+
+    async with session_factory() as session:
+        result = await session.execute(
+            select(Position).where(
+                Position.symbol == "INFY",
+                Position.instrument_type == InstrumentType.EQUITY.value,
+            )
+        )
+        pos = result.scalar_one_or_none()
+
+    assert pos is None
+
+
 def _make_direct_executor(session_factory, broker) -> OrderExecutor:
     trading = TradingStore(session_factory)
-    accountant = PositionAccountant(PositionStore(session_factory), _make_factory())
+    accountant = PositionAccountant(PositionStore(session_factory), trading, _make_factory())
     fill_handler = FillHandler(trading, accountant)
     return OrderExecutor(
         config=ExecConfig(exec_id="direct"),

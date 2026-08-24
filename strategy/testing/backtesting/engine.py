@@ -167,7 +167,7 @@ class BacktestSession(TestingSession):
             audit = AuditStore(sf)
             trading = TradingStore(sf)
             position = PositionStore(sf)
-            accountant = PositionAccountant(position, factory)
+            accountant = PositionAccountant(position, trading, factory)
             fill_handler = FillHandler(trading, accountant)
 
             # SignalGenerator upserts algo_state keyed by algo.name via a
@@ -219,7 +219,6 @@ class BacktestSession(TestingSession):
                 trading=trading,
                 audit=audit,
                 position=position,
-                factory=factory,
                 clock=sim_clock,
                 equity_provider=lambda: tracker.current_equity,
                 circuit=CircuitBreaker(),

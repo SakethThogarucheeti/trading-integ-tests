@@ -24,7 +24,7 @@ from trading_risk_sdk.gates.duplicate_position import DuplicatePositionGate
 from trading_risk_sdk.gates.time_cutoff import TimeCutoffGate
 from trading.risk.service.filter import RiskConfig, RiskFilter
 from trading.tick_ingest.service.ingestor import CircuitBreaker
-from trading.storage.cache import CacherFactory, ValueCache, setup_cache
+from trading.storage.cache import setup_cache
 from trading.tick_ingest.storage.store import AuditStore
 from trading.execution.storage.store import PositionStore
 from trading.execution.storage.store import TradingStore
@@ -76,7 +76,6 @@ def _make_risk_reg(
         trading=trading,
         audit=audit,
         position=position,
-        factory=CacherFactory(ValueCache(), clock or SYSTEM_CLOCK),
         clock=clock,
         circuit=CircuitBreaker(),
     )
@@ -160,7 +159,6 @@ async def test_circuit_open_rejects_signal(engine, session_factory):
         trading=trading,
         audit=audit,
         position=position,
-        factory=CacherFactory(ValueCache(), clock or SYSTEM_CLOCK),
         clock=clock,
         circuit=circuit,
     )
