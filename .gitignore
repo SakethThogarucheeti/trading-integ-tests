@@ -15,3 +15,7 @@ wheels/
 
 # Pytest
 .pytest_cache/
+
+# Grid-search test harness output (test_hyperparam_search.py, test_rsi_search.py,
+# test_orb_search.py, test_vwap_search.py write results here as a side effect)
+strategy/strategies/*_search_results.csv
