@@ -10,6 +10,9 @@ Verifies that RiskFilter correctly enforces:
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 from trading.core.clock import SYSTEM_CLOCK, SimulatedClock
 from trading.core.schemas import (
     InstrumentType,
@@ -18,16 +21,11 @@ from trading.core.schemas import (
     SignalType,
     ValidatedOrderEvent,
 )
-from trading_risk_sdk.gates.circuit_breaker import CircuitBreakerGate
-from trading_risk_sdk.gates.daily_loss import DailyLossGate
-from trading_risk_sdk.gates.duplicate_position import DuplicatePositionGate
-from trading_risk_sdk.gates.time_cutoff import TimeCutoffGate
 from trading.risk.service.filter import RiskConfig, RiskFilter
 from trading.tick_ingest.service.ingestor import CircuitBreaker
-from trading.storage.cache import setup_cache
-from trading.tick_ingest.storage.store import AuditStore
-from trading.execution.storage.store import PositionStore
-from trading.execution.storage.store import TradingStore
+
+sys.path.insert(0, str(Path(__file__).parents[1]))
+from helpers import make_risk_filter
 
 
 def _signal(
@@ -53,32 +51,17 @@ def _make_risk_reg(
     cutoff_minute: int = 59,
     equity: float = 1_000_000.0,
     clock=None,
+    circuit=None,
 ) -> RiskFilter:
-    setup_cache(None)
-    trading = TradingStore(session_factory)
-    audit = AuditStore(session_factory)
-    position = PositionStore(session_factory)
-    return RiskFilter(
-        config=RiskConfig(
-            equity=equity,
-            max_daily_loss_pct=2.0,
-            risk_per_trade_pct=1.0,
-            rc_id="default",
-            intraday_cutoff_hour=cutoff_hour,
-            intraday_cutoff_minute=cutoff_minute,
-        ),
-        gates=[
-            TimeCutoffGate(),
-            CircuitBreakerGate(),
-            DailyLossGate(enabled=False),  # paper mode: skip daily loss check
-            DuplicatePositionGate(),
-        ],
-        trading=trading,
-        audit=audit,
-        position=position,
-        clock=clock,
-        circuit=CircuitBreaker(),
+    config = RiskConfig(
+        equity=equity,
+        max_daily_loss_pct=2.0,
+        risk_per_trade_pct=1.0,
+        rc_id="default",
+        intraday_cutoff_hour=cutoff_hour,
+        intraday_cutoff_minute=cutoff_minute,
     )
+    return make_risk_filter(session_factory, config=config, clock=clock, circuit=circuit)
 
 
 async def test_time_cutoff_rejects_signal(engine, session_factory):
@@ -140,27 +123,8 @@ async def test_circuit_open_rejects_signal(engine, session_factory):
     circuit = CircuitBreaker()
     circuit.open()
 
-    setup_cache(None)
-    trading = TradingStore(session_factory)
-    audit = AuditStore(session_factory)
-    position = PositionStore(session_factory)
-    risk_reg = RiskFilter(
-        config=RiskConfig(
-            equity=1_000_000.0,
-            intraday_cutoff_hour=15,
-            intraday_cutoff_minute=30,
-        ),
-        gates=[
-            TimeCutoffGate(),
-            CircuitBreakerGate(),
-            DailyLossGate(enabled=False),
-            DuplicatePositionGate(),
-        ],
-        trading=trading,
-        audit=audit,
-        position=position,
-        clock=clock,
-        circuit=circuit,
+    risk_reg = _make_risk_reg(
+        session_factory, cutoff_hour=15, cutoff_minute=30, clock=clock, circuit=circuit
     )
     result = await risk_reg.handle(_signal())
 

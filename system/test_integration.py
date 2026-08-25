@@ -16,7 +16,7 @@ from pathlib import Path
 from sqlalchemy import select
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
-from helpers import seed_signal
+from helpers import make_risk_filter, seed_signal
 from simulators.fault_injector import FaultInjector
 
 from trading.broker.service.paper_broker import PriceStore
@@ -33,14 +33,7 @@ from trading.core.schemas import (
 from trading.execution.service.fill_handler import FillHandler
 from trading.execution.service.executor import ExecConfig, OrderExecutor
 from trading.execution.service.position_accountant import PositionAccountant
-from trading_risk_sdk.gates.circuit_breaker import CircuitBreakerGate
-from trading_risk_sdk.gates.daily_loss import DailyLossGate
-from trading_risk_sdk.gates.duplicate_position import DuplicatePositionGate
-from trading_risk_sdk.gates.time_cutoff import TimeCutoffGate
-from trading.risk.service.filter import RiskConfig, RiskFilter
-from trading.tick_ingest.service.ingestor import CircuitBreaker
 from trading.storage.cache import CacherFactory, ValueCache, setup_cache
-from trading.tick_ingest.storage.store import AuditStore
 from trading.execution.storage.store import PositionStore
 from trading.execution.storage.store import TradingStore
 
@@ -87,28 +80,8 @@ def _make_pipeline(session_factory, broker):
     clock = SimulatedClock()
     clock.advance(datetime(2024, 1, 2, 10, 0, tzinfo=UTC))
     trading = TradingStore(session_factory)
-    audit = AuditStore(session_factory)
-    position = PositionStore(session_factory)
 
-    setup_cache(None)
-    risk_reg = RiskFilter(
-        config=RiskConfig(
-            equity=1_000_000.0,
-            intraday_cutoff_hour=15,
-            intraday_cutoff_minute=30,
-        ),
-        gates=[
-            TimeCutoffGate(),
-            CircuitBreakerGate(),
-            DailyLossGate(enabled=False),
-            DuplicatePositionGate(),
-        ],
-        trading=trading,
-        audit=audit,
-        position=position,
-        clock=clock,
-        circuit=CircuitBreaker(),
-    )
+    risk_reg = make_risk_filter(session_factory, clock=clock)
     price_store = PriceStore()
     price_store.update("INFY", 1505.0)
 
