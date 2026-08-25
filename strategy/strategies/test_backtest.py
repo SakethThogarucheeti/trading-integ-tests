@@ -8,7 +8,6 @@ checks, and position tracking run against the actual engine — no SQLite shims.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from pathlib import Path
 
 import polars as pl
 import pytest
@@ -16,13 +15,9 @@ from testing.backtesting.data_loader import DataLoader, FileDataLoader
 from testing.backtesting.engine import BacktestSession
 from testing.backtesting.report import BacktestConfig
 from testing.utils.generators import crash_scenario, random_walk_ohlcv, trending_market
+from testing.utils.paths import DATA_DIR as _DATA_DIR
 
 from trading.config.settings import AlgoSettings
-
-# Directory written by `uv run fetch-data` (from trading-platform/) — skip
-# real-data tests when absent. trading-platform is a sibling repo, not an
-# ancestor of this file, so resolve via the shared workspace root.
-_DATA_DIR = Path(__file__).parents[3] / "trading-platform" / "data"
 
 # ---------------------------------------------------------------------------
 # Helpers

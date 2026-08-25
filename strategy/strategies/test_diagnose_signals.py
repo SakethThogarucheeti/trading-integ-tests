@@ -11,17 +11,15 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 import pytest
 from sqlalchemy import text
 from testing.backtesting.data_loader import FileDataLoader
 from testing.backtesting.engine import BacktestSession
 from testing.backtesting.report import BacktestConfig, BacktestReport
+from testing.utils.paths import DATA_DIR as _DATA_DIR
 
 from trading.config.settings import AlgoSettings
-
-_DATA_DIR = Path(__file__).parents[3] / "trading-platform" / "data"
 
 pytestmark = pytest.mark.skipif(
     not _DATA_DIR.exists(),
