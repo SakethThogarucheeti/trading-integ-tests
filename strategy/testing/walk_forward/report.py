@@ -60,8 +60,8 @@ class WalkForwardReport(SessionReport):
     # SessionReport fields
     session_id: str = ""
     session_type: str = "walk_forward"
-    started_at: datetime = field(default_factory=field(default_factory=lambda: datetime.now(UTC)))
-    finished_at: datetime = field(default_factory=field(default_factory=lambda: datetime.now(UTC)))
+    started_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    finished_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, object]:
         return {
