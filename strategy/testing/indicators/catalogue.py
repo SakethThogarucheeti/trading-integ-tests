@@ -72,8 +72,9 @@ def load_catalogue(
         params_dict: dict[str, Any] = entry["params"]
         extractor: str = entry["extractor"]
 
-        if alias is None:
-            result.append((label, None, None, extractor))
+        if alias is None or is_session_aware(alias):
+            cls = Indicator.lookup(alias) if alias is not None else None
+            result.append((label, cls, None, extractor))
             continue
 
         cls = Indicator.lookup(alias)
