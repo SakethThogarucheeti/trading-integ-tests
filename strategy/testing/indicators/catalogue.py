@@ -29,7 +29,7 @@ from typing import Any
 from quantindicators.base import Indicator, IndicatorParameters
 
 _CATALOGUE_PATH = (
-    Path(__file__).parents[2] / "strategy-testing" / "indicators" / "indicator_catalogue.json"
+    Path(__file__).parents[2] / "indicators" / "indicator_catalogue.json"
 )
 
 # Aliases for session-aware indicators — callers must pass clock at construction
