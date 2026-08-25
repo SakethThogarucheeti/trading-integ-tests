@@ -12,10 +12,9 @@ from testing.simulators.synthetic_broker import SyntheticDataBroker
 from trading.core.clock import SimulatedClock
 from quantindicators.polars_store import PolarsStore
 
-# trading-platform/data/  (parents: [0]=indicators [1]=strategy-testing(tests)
-#                                    [2]=strategy-testing(pkg) [3]=integ
-#                                    [4]=tst [5]=trading-platform)
-_DATA_DIR = Path(__file__).parents[4] / "data"
+# trading-platform/data/  (parents: [0]=indicators [1]=strategy
+#                                    [2]=trading-integ-tests [3]=trading (workspace root))
+_DATA_DIR = Path(__file__).parents[3] / "trading-platform" / "data"
 
 _DEFAULT_SYMBOL = "INFY"
 _DEFAULT_INTERVAL = "15min"
