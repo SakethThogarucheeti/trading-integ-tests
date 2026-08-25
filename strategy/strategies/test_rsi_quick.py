@@ -2,16 +2,15 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from pathlib import Path
 
 import pytest
 from testing.backtesting.engine import BacktestSession
 from testing.backtesting.report import BacktestConfig
 from testing.backtesting.data_loader import FileDataLoader
+from testing.utils.paths import DATA_DIR as _DATA_DIR
 
 from trading.config.settings import AlgoSettings
 
-_DATA_DIR = Path(__file__).parents[3] / "trading-platform" / "data"
 _SYMBOLS = ["INFY", "TCS", "RELIANCE", "HDFCBANK", "ICICIBANK"]
 _START = datetime(2025, 6, 1, tzinfo=UTC)
 _END = datetime(2026, 5, 25, tzinfo=UTC)

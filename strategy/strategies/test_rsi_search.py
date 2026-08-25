@@ -23,11 +23,10 @@ import pytest
 from testing.backtesting.data_loader import FileDataLoader
 from testing.backtesting.engine import BacktestSession
 from testing.backtesting.report import BacktestConfig, BacktestReport
+from testing.utils.paths import DATA_DIR as _DATA_DIR
 
 from trading.config.settings import AlgoSettings
 from trading.config.strategy_config import load_strategy_config
-
-_DATA_DIR = Path(__file__).parents[3] / "trading-platform" / "data"
 
 pytestmark = pytest.mark.skipif(
     not _DATA_DIR.exists(),

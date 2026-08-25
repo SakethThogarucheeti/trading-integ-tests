@@ -9,17 +9,16 @@ to populate the data directory first.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from pathlib import Path
 
 import pytest
 from testing.backtesting.engine import BacktestSession
 from testing.backtesting.report import BacktestConfig
 from testing.backtesting.data_loader import FileDataLoader
+from testing.utils.paths import DATA_DIR as _DATA_DIR
 
 from trading.config.settings import AlgoSettings
 from trading_strategy_sdk.factory import registered_strategies
 
-_DATA_DIR = Path(__file__).parents[3] / "trading-platform" / "data"
 _ALL_STRATEGIES = list(registered_strategies().keys())
 
 _SYMBOLS = ["INFY", "TCS", "RELIANCE", "HDFCBANK", "ICICIBANK"]
