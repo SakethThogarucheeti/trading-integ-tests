@@ -515,7 +515,7 @@ async def test_indicator_wf_ic_evaluation(data_loader) -> None:
     results: dict[str, dict[int, list[float]]] = defaultdict(lambda: defaultdict(list))
 
     loop = asyncio.get_running_loop()
-    with ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor(max_workers=4) as executor:
         futures = [
             loop.run_in_executor(executor, _worker_window, (sym, train, test))
             for sym, train, test, _ in all_tasks

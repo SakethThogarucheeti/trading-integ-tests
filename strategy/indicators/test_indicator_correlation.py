@@ -267,7 +267,7 @@ async def test_indicator_correlation_matrix(make_store) -> None:
     print(f"\n  Dispatching {len(symbol_rows)} symbols to process pool ...")
 
     loop = asyncio.get_running_loop()
-    with ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor(max_workers=4) as executor:
         futures = [
             loop.run_in_executor(executor, _worker_corr, (sym, rows)) for sym, rows in symbol_rows
         ]
