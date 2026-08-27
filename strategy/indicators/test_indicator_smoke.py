@@ -15,6 +15,7 @@ Run:
 from __future__ import annotations
 
 import math
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -75,6 +76,11 @@ from quantindicators.library.williams_r import WilliamsR
 
 _SYMBOL = "INFY"
 _INTERVAL = "15min"
+# Predates the loaded data window (see conftest.py's _MONTH_START) so
+# fetch_since() includes every bar pushed by make_store — session-open
+# accuracy doesn't matter for this smoke test, only that compute() runs
+# over a non-empty window without raising.
+_SESSION_OPEN = datetime(2026, 1, 1, tzinfo=UTC)
 
 
 def _catalogue() -> list[tuple[str, type, Any]]:
@@ -149,9 +155,13 @@ def _catalogue() -> list[tuple[str, type, Any]]:
 def _session_catalogue() -> list[tuple[str, type, Any]]:
     """Session-aware indicators that need a clock in __init__."""
     return [
-        ("VWAP", VWAP, VWAP.Parameters()),
-        ("VWAPBands", VWAPBands, VWAPBands.Parameters()),
-        ("SessionHLPct", SessionHighLowPct, SessionHighLowPct.Parameters()),
+        ("VWAP", VWAP, VWAP.Parameters(session_open_utc=_SESSION_OPEN)),
+        ("VWAPBands", VWAPBands, VWAPBands.Parameters(session_open_utc=_SESSION_OPEN)),
+        (
+            "SessionHLPct",
+            SessionHighLowPct,
+            SessionHighLowPct.Parameters(session_open_utc=_SESSION_OPEN),
+        ),
     ]
 
 
