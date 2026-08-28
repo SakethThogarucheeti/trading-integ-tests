@@ -26,7 +26,7 @@ from trading.execution.service.position_accountant import PositionAccountant
 from trading.execution.storage.models import Order, Position
 from trading.execution.storage.store import PositionStore, TradingStore
 from trading.reports.trades import fetch_filled_trades
-from trading.storage.cache import CacherFactory, ValueCache, setup_cache
+from trading.storage.cache import CacherFactory, ValueCache
 from trading.strategy.storage.models import Signal
 
 
@@ -53,7 +53,6 @@ async def _seed_position(session_factory, symbol: str, net_qty: int, avg_price: 
 
 
 def _make_accountant(session_factory) -> PositionAccountant:
-    setup_cache(None)
     return PositionAccountant(
         PositionStore(session_factory), TradingStore(session_factory), CacherFactory(ValueCache(), SYSTEM_CLOCK)
     )

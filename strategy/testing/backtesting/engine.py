@@ -41,7 +41,7 @@ from trading_risk_sdk.gates.duplicate_position import DuplicatePositionGate
 from trading_risk_sdk.gates.time_cutoff import TimeCutoffGate
 from trading.risk.service.filter import RiskConfig, RiskFilter
 from trading.tick_ingest.service.ingestor import CircuitBreaker
-from trading.storage.cache import CacherFactory, ValueCache, setup_cache
+from trading.storage.cache import CacherFactory, ValueCache
 from trading.tick_ingest.storage.store import AuditStore
 from trading.strategy.storage.store import ChartStore
 from trading.strategy.storage.store import ConfigStore
@@ -145,7 +145,6 @@ class BacktestSession(TestingSession):
 
         polars_store = PolarsStore()
 
-        setup_cache(None)
         factory = CacherFactory(ValueCache(), sim_clock)
 
         audit = AuditStore(sf)
@@ -388,9 +387,9 @@ class BacktestSession(TestingSession):
             # loop closes, surfacing as unhandled-exception noise (or, if the
             # loop wins the race first, a genuine lost write). Wait for them
             # here instead — filtered strictly by name, not "every task on the
-            # loop": long-lived tasks (e.g. cashews' cache-expiry sweeper,
-            # lazily started by setup_cache()) also live on the loop and never
-            # finish on their own, so gathering one of those hangs forever.
+            # loop": other long-lived service tasks can also live on the loop
+            # and never finish on their own, so gathering one of those hangs
+            # forever.
             pending = [
                 t
                 for t in asyncio.all_tasks()

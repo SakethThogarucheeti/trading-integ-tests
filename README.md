@@ -6,7 +6,7 @@ scikit-learn, plotly) and Docker requirement, separate from the fast unit tests 
 live in `trading-platform/tst/unit/`.
 
 Two suites, each with its own Python environment and `pyproject.toml`. Both require Docker to
-spin up Postgres (and Redis for system tests). Both depend on `trading-platform` via an
+spin up Postgres. Both depend on `trading-platform` via an
 editable path dependency (`../../trading-platform`), so local changes to the engine are
 picked up without reinstalling.
 

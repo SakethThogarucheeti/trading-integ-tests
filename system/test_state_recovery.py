@@ -21,13 +21,12 @@ from trading.core.schemas import InstrumentType, OrderType, Side, ValidatedOrder
 from trading.execution.service.fill_handler import FillHandler
 from trading.execution.service.executor import ExecConfig, OrderExecutor
 from trading.execution.service.position_accountant import PositionAccountant
-from trading.storage.cache import CacherFactory, ValueCache, setup_cache
+from trading.storage.cache import CacherFactory, ValueCache
 from trading.execution.storage.store import PositionStore
 from trading.execution.storage.store import TradingStore
 
 
 def _make_fill_handler(session_factory):
-    setup_cache(None)
     accountant = PositionAccountant(
         PositionStore(session_factory), TradingStore(session_factory), CacherFactory(ValueCache(), SYSTEM_CLOCK)
     )

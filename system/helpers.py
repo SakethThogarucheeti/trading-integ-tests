@@ -8,7 +8,6 @@ from trading.core.clock import Clock
 from trading.core.schemas import SignalEvent, SignalType, ValidatedOrderEvent
 from trading.execution.storage.store import PositionStore, TradingStore
 from trading.risk.service.filter import RiskConfig, RiskFilter
-from trading.storage.cache import setup_cache
 from trading.tick_ingest.service.ingestor import CircuitBreaker
 from trading.tick_ingest.storage.store import AuditStore
 from trading_risk_sdk.gates.circuit_breaker import CircuitBreakerGate
@@ -32,7 +31,6 @@ def make_risk_filter(
     `circuit` for a pre-opened CircuitBreaker (e.g. to test the open-circuit
     rejection path).
     """
-    setup_cache(None)
     trading = TradingStore(session_factory)
     audit = AuditStore(session_factory)
     position = PositionStore(session_factory)

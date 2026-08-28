@@ -1,6 +1,6 @@
 # system/ — System integration tests
 
-End-to-end pipeline tests against real Postgres + Redis (via Docker / testcontainers).
+End-to-end pipeline tests against real Postgres (via Docker / testcontainers).
 
 ```bash
 cd system

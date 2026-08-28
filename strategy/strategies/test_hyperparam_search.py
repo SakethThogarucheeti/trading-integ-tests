@@ -203,7 +203,7 @@ def _print_table(results: list[GridResult]) -> None:
 async def test_ema_grid_search(pg_engine, tmp_path):
     """
     Run all fast/slow/ATR combos sequentially — each gets its own Postgres
-    schema and Redis channel namespace so they don't interfere.
+    schema so they don't interfere.
 
     Grid parameters are loaded from strategy_config.json in the project root.
     Results are appended to grid_search_results.csv as each combo finishes.

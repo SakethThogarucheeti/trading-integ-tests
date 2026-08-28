@@ -58,7 +58,7 @@ def build_session(config: SessionConfig, **kwargs: object) -> TestingSession:
     Instantiate the right ``TestingSession`` for *config*.
 
     Dispatches via the global registry — no ``isinstance`` checks required.
-    Extra keyword arguments (``db_engine``, ``redis``, ``bus``, etc.) are
+    Extra keyword arguments (``db_engine``, ``bus``, etc.) are
     forwarded to the session constructor.
 
     Raises ``KeyError`` if ``config.type`` has not been registered.
