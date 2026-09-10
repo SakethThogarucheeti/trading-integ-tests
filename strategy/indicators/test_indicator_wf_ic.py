@@ -15,13 +15,10 @@ Symbols within each window are evaluated in parallel via asyncio.gather.
 
 Uses scipy.stats.spearmanr for IC and numpy percentiles for quintile binning.
 
+Requires: data/ directory populated via ``uv run fetch-data`` (skipped otherwise).
+
 Run:
     cd strategy
-
-    # synthetic (no files needed)
-    uv run python -m pytest indicators/test_indicator_wf_ic.py -v -s
-
-    # real data
     uv run python -m pytest indicators/test_indicator_wf_ic.py -v -s --data-source=parquet
 """
 
@@ -41,6 +38,7 @@ import polars as pl
 import pytest
 from scipy import stats
 from scipy.stats import ConstantInputWarning
+from testing.utils.paths import DATA_DIR as _DATA_DIR
 from testing.walk_forward.runner import _compute_windows
 
 from trading.core.clock import SimulatedClock
@@ -79,6 +77,17 @@ from quantindicators.library.vwap import VWAP
 from quantindicators.library.vwap_bands import VWAPBands
 from quantindicators.library.williams_r import WilliamsR
 from quantindicators.polars_store import PolarsStore
+
+# See test_indicator_correlation.py's pytestmark comment: a full run sweeps
+# 30 symbols x 400 days via a process pool -- costly regardless of whether
+# the data source is synthetic or real (cost scales with symbol/bar/
+# indicator count, not data realism). A deliberate research tool, not a
+# minimal-data integ test. Skip by default, opt in with real fetched data
+# via `uv run fetch-data`.
+pytestmark = pytest.mark.skipif(
+    not _DATA_DIR.exists(),
+    reason="data/ directory not found — run uv run fetch-data first",
+)
 
 _SYMBOLS = [
     "INFY",

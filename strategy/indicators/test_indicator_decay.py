@@ -25,7 +25,9 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pytest
 from scipy import stats
+from testing.utils.paths import DATA_DIR as _DATA_DIR
 
 from trading.core.clock import SimulatedClock
 from quantindicators.library.ema import EMA
@@ -33,6 +35,15 @@ from quantindicators.library.session_high_low_pct import SessionHighLowPct
 from quantindicators.library.vwap import VWAP
 from quantindicators.library.vwap_bands import VWAPBands
 from quantindicators.polars_store import PolarsStore
+
+# See test_indicator_correlation.py's pytestmark comment: a full run sweeps
+# 30 symbols x 400 days via a process pool -- a deliberate research tool,
+# not a minimal-data integ test. Skip by default, opt in with real fetched
+# data via `uv run fetch-data`.
+pytestmark = pytest.mark.skipif(
+    not _DATA_DIR.exists(),
+    reason="data/ directory not found — run uv run fetch-data first",
+)
 
 _SYMBOLS = [
     "INFY",
