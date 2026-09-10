@@ -35,7 +35,9 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pytest
 from scipy import stats
+from testing.utils.paths import DATA_DIR as _DATA_DIR
 
 from trading.core.clock import SimulatedClock
 from quantindicators.library.adx import ADX
@@ -86,6 +88,15 @@ from quantindicators.library.vwma import VWMA
 from quantindicators.library.weekly_rsi import WeeklyRSI
 from quantindicators.library.williams_r import WilliamsR
 from quantindicators.polars_store import PolarsStore
+
+# See test_indicator_correlation.py's pytestmark comment. This file's window
+# is even larger (~1000 days, ~700 trading days) -- a deliberate research
+# tool, not a minimal-data integ test. Skip by default, opt in with real
+# fetched data via `uv run fetch-data`.
+pytestmark = pytest.mark.skipif(
+    not _DATA_DIR.exists(),
+    reason="data/ directory not found — run uv run fetch-data first",
+)
 
 _SYMBOLS = [
     "INFY",

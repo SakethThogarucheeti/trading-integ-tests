@@ -22,7 +22,14 @@ _ALL_STRATEGIES = list(registered_strategies().keys())
 
 _START = datetime(2024, 1, 2, 9, 15, 0, tzinfo=UTC)
 _END = datetime(2024, 6, 30, 18, 0, 0, tzinfo=UTC)
-_N_BARS = 1000
+# 250 bars: default warmup_candles is 200 (see testing/backtesting/engine.py),
+# so this leaves a modest live-bar margin without paying for hundreds of
+# unneeded ones -- each bar is a real Postgres round-trip through the full
+# pipeline, and this file runs it 14x (7 strategies x 2 scenarios). The
+# assertions only check metric ranges, not that any trade actually fired,
+# so no larger margin is needed (c.f. test_backtest.py's crossover-generation
+# test, which does need trades and uses a larger margin for that reason).
+_N_BARS = 250
 _EQUITY = 100_000.0
 
 
