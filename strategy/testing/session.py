@@ -67,8 +67,7 @@ class TestingSession(ABC):
     Extensibility
     -------------
     Decorated with ``@session_type("name")`` to register in the global
-    registry so ``TestHarness`` can dispatch without ``isinstance`` checks.
-    Each subclass must also set::
+    registry. Each subclass must also set::
 
         _config_cls: ClassVar[type[SessionConfig]] = MyConfig
     """
