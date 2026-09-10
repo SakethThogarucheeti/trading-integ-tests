@@ -36,8 +36,7 @@ def session_type(name: str):
             ...
 
     The ``name`` must match the ``type`` literal on the paired
-    ``SessionConfig`` subclass so YAML / JSON deserialisation can resolve
-    the right config class via ``config_types()``.
+    ``SessionConfig`` subclass.
 
     Adding a new test type requires only this decorator — no registry
     changes needed elsewhere.

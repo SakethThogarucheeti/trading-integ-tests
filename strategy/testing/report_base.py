@@ -13,8 +13,7 @@ class SessionReport(ABC):
     Every concrete report must implement:
     - ``to_dict()`` — machine-readable summary (JSON-serialisable).
     - ``to_html()`` — self-contained HTML with embedded Plotly charts
-      (no external CDN). ``TraderReport`` embeds the returned string
-      inline without knowing the concrete type.
+      (no external CDN).
 
     ``save()`` writes both formats side-by-side at the given path stem.
     """
@@ -36,9 +35,6 @@ class SessionReport(ABC):
         Requirements:
         - No external CDN references.
         - Must be valid standalone HTML (can be opened in a browser).
-        - ``TraderReport.to_html()`` embeds the ``<body>`` content of each
-          sub-report inside a collapsible ``<details>`` section without
-          any ``isinstance`` checks.
         """
 
     def save(self, path: Path) -> None:

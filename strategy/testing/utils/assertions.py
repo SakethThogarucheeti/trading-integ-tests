@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from testing.monte_carlo.report import MonteCarloReport
 
 # ---------------------------------------------------------------------------
-# Domain assertions for use in pytest tests and TestHarness evaluation.
+# Domain assertions for use in pytest tests.
 #
 # These functions raise AssertionError with a descriptive message on failure.
 # They intentionally do NOT catch exceptions — let pytest report the traceback.
