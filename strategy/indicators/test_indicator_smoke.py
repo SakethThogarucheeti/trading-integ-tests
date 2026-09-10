@@ -195,14 +195,14 @@ async def test_indicator_no_error_after_warmup(label: str, make_store) -> None:
     "label",
     [label for label, _, _ in _session_catalogue()],
 )
-async def test_session_indicator_no_error(label: str, make_store, simulated_clock) -> None:
-    """Session-aware indicators tested separately (require clock in __init__)."""
+async def test_session_indicator_no_error(label: str, make_store) -> None:
+    """Session-aware indicators tested separately (session_open_utc comes via Parameters)."""
     store, rows = make_store(_SYMBOL, _INTERVAL)
     assert rows, f"make_store returned no rows for {_SYMBOL}/{_INTERVAL}"
 
     cat = {lbl: (cls, params) for lbl, cls, params in _session_catalogue()}
     cls, params = cat[label]
-    ind = cls(store, _SYMBOL, _INTERVAL, simulated_clock)
+    ind = cls(store, _SYMBOL, _INTERVAL)
 
     result = await ind.compute(params)
 
@@ -211,7 +211,7 @@ async def test_session_indicator_no_error(label: str, make_store, simulated_cloc
     )
 
 
-async def test_all_indicators_produce_values(make_store, simulated_clock) -> None:
+async def test_all_indicators_produce_values(make_store) -> None:
     """At least half of all indicators must return a non-None value after warmup."""
     store, rows = make_store(_SYMBOL, _INTERVAL)
     assert rows, "make_store returned no rows"
@@ -221,12 +221,8 @@ async def test_all_indicators_produce_values(make_store, simulated_clock) -> Non
     errors: list[str] = []
 
     for label, cls, params in all_entries:
-        # Session-aware indicators need clock
         try:
-            if cls in (VWAP, VWAPBands, SessionHighLowPct):
-                ind = cls(store, _SYMBOL, _INTERVAL, simulated_clock)
-            else:
-                ind = cls(store, _SYMBOL, _INTERVAL)
+            ind = cls(store, _SYMBOL, _INTERVAL)
             result = await ind.compute(params)
         except Exception as exc:
             errors.append(f"{label}: raised {exc!r}")
