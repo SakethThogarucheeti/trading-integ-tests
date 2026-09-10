@@ -73,18 +73,26 @@ class BacktestSession(TestingSession):
         results_dir: Path,
         db_schema: str = "public",
         keep_schema: bool = False,
+        connect_args: dict[str, object] | None = None,
     ) -> None:
         super().__init__(results_dir=results_dir)
         self._config = config
         self._db_engine = db_engine
         self._db_schema = db_schema
         self._keep_schema = keep_schema
+        # _make_schema_engine() builds a *separate* engine from db_engine.url
+        # (needs its own search_path) — connect_args aren't inherited from
+        # db_engine automatically, so any non-default connection options
+        # (e.g. ssl=False for a flaky local container) must be passed here too.
+        self._connect_args = connect_args or {}
 
     async def _setup_infrastructure(
         self,
     ) -> tuple[AsyncEngine, async_sessionmaker[AsyncSession]]:
         """Schema-isolated engine + session factory for parallel safety."""
-        schema_engine = await _make_schema_engine(self._db_engine, self._db_schema)
+        schema_engine = await _make_schema_engine(
+            self._db_engine, self._db_schema, self._connect_args
+        )
         sf = build_session_factory(schema_engine)
         await init_db(schema_engine)
         logger.debug("BacktestSession[%s]: DB schema ready", self._db_schema)
@@ -436,7 +444,9 @@ def _load_data(
 _schema_create_lock = asyncio.Lock()
 
 
-async def _make_schema_engine(base_engine: AsyncEngine, schema: str) -> AsyncEngine:
+async def _make_schema_engine(
+    base_engine: AsyncEngine, schema: str, extra_connect_args: dict[str, object] | None = None
+) -> AsyncEngine:
     """
     Create (or reset) a Postgres schema and return an engine whose connections
     have ``search_path`` pinned to that schema.
@@ -444,6 +454,11 @@ async def _make_schema_engine(base_engine: AsyncEngine, schema: str) -> AsyncEng
     DDL is serialized via a process-level asyncio.Lock. Run grid searches
     sequentially (one pytest process at a time) to avoid cross-process catalog
     deadlocks — Postgres cannot serialize DDL across separate OS processes.
+
+    This engine is built fresh from ``base_engine.url`` rather than reusing
+    ``base_engine`` directly, so any non-default connect_args on the caller's
+    original engine (e.g. ``ssl=False`` for a flaky local container) must be
+    passed in via *extra_connect_args* — they are not inherited automatically.
     """
     async with _schema_create_lock:
         async with base_engine.begin() as conn:
@@ -454,6 +469,7 @@ async def _make_schema_engine(base_engine: AsyncEngine, schema: str) -> AsyncEng
         base_engine.url,
         echo=False,
         connect_args={
+            **(extra_connect_args or {}),
             "server_settings": {"search_path": schema},
             "prepared_statement_cache_size": 0,
         },
