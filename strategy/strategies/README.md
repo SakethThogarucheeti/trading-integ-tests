@@ -2,6 +2,12 @@
 
 Backtest-level tests for all built-in strategies. Each test runs the full pipeline (candle feed → strategy → risk → executor) against a Postgres-backed backtest session.
 
+**Don't run this directory as one combined `pytest strategies/` invocation** -- with
+~28+ heavy tests (testcontainers, `ProcessPoolExecutor`-based grid searches) sharing one
+long-lived process, resource accumulation causes a severe slowdown partway through that's
+easy to mistake for a hang (see trading-integ-tests#16). Use `make test-strategies` from
+`strategy/` instead, which runs each file as its own process.
+
 ## Files
 
 | File | What it tests |

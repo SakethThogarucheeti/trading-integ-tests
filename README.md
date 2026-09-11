@@ -27,6 +27,14 @@ cd strategy && uv sync && uv run pytest .
 cd system && uv sync && uv run pytest .
 ```
 
+**Note on `strategy/`:** running the full `strategies/` subsuite as one combined
+`pytest strategies/` invocation degrades badly partway through -- not a hang, but a severe
+slowdown from thread/connection/memory accumulation across ~28+ heavy tests (testcontainers,
+`ProcessPoolExecutor`-based grid searches) sharing one long-lived process, easy to mistake for
+a stuck process. Use `cd strategy && make test-strategies` instead, which runs each
+`strategies/test_*.py` file as its own `pytest` invocation (fresh process per file). See
+`strategy/Makefile` and trading-integ-tests#16.
+
 ## Conventions
 
 - Each suite has a single `conftest.py` that provides `pg_container` (session-scoped Postgres via testcontainers) and per-test fixtures.
