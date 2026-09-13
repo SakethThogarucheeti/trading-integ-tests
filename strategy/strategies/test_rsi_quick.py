@@ -18,7 +18,7 @@ _EQUITY = 100_000.0
 
 
 @pytest.mark.skipif(not _DATA_DIR.exists(), reason="data/ directory not found")
-async def test_rsi_quick(pg_engine, tmp_path):
+async def test_rsi_quick(pg_engine, db_schema, tmp_path):
     config = BacktestConfig(
         algo=AlgoSettings(
             name="rsi_quick",
@@ -33,7 +33,9 @@ async def test_rsi_quick(pg_engine, tmp_path):
         initial_equity=_EQUITY,
         slippage_pct=0.05,
     )
-    session = BacktestSession(config=config, db_engine=pg_engine, results_dir=tmp_path)
+    session = BacktestSession(
+        config=config, db_engine=pg_engine, results_dir=tmp_path, db_schema=db_schema
+    )
     report = await session.run()
 
     pnl = report.final_equity - _EQUITY

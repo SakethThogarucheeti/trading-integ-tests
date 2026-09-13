@@ -53,7 +53,7 @@ class _InMemoryLoader:
 
 
 @pytest.mark.parametrize("strategy_id", _ALL_STRATEGIES)
-async def test_strategy_trending_market(strategy_id, pg_engine, tmp_path):
+async def test_strategy_trending_market(strategy_id, pg_engine, db_schema, tmp_path):
     """Every strategy must complete on a trending market and return valid metrics."""
     df = trending_market(n_bars=_N_BARS, drift=0.0004, start_price=1500.0, seed=42, start=_START)
     config = BacktestConfig(
@@ -64,7 +64,9 @@ async def test_strategy_trending_market(strategy_id, pg_engine, tmp_path):
         initial_equity=_EQUITY,
         slippage_pct=0.05,
     )
-    session = BacktestSession(config=config, db_engine=pg_engine, results_dir=tmp_path)
+    session = BacktestSession(
+        config=config, db_engine=pg_engine, results_dir=tmp_path, db_schema=db_schema
+    )
     report = await session.run()
 
     assert report is not None
@@ -82,7 +84,7 @@ async def test_strategy_trending_market(strategy_id, pg_engine, tmp_path):
 
 
 @pytest.mark.parametrize("strategy_id", _ALL_STRATEGIES)
-async def test_strategy_random_walk(strategy_id, pg_engine, tmp_path):
+async def test_strategy_random_walk(strategy_id, pg_engine, db_schema, tmp_path):
     """Every strategy must complete on a random walk and return valid metrics."""
     df = random_walk_ohlcv(n_bars=_N_BARS, start_price=1500.0, seed=7, start=_START)
     config = BacktestConfig(
@@ -93,7 +95,9 @@ async def test_strategy_random_walk(strategy_id, pg_engine, tmp_path):
         initial_equity=_EQUITY,
         slippage_pct=0.05,
     )
-    session = BacktestSession(config=config, db_engine=pg_engine, results_dir=tmp_path)
+    session = BacktestSession(
+        config=config, db_engine=pg_engine, results_dir=tmp_path, db_schema=db_schema
+    )
     report = await session.run()
 
     assert report is not None

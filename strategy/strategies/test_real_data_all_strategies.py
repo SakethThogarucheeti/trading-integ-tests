@@ -45,7 +45,7 @@ def _algo(strategy_id: str) -> AlgoSettings:
 
 @_skip
 @pytest.mark.parametrize("strategy_id", _ALL_STRATEGIES)
-async def test_all_strategies_real_data(strategy_id, pg_engine, tmp_path):
+async def test_all_strategies_real_data(strategy_id, pg_engine, db_schema, tmp_path):
     """Every strategy on real Zerodha 15min data — surfaces real-market behaviour."""
     config = BacktestConfig(
         algo=_algo(strategy_id),
@@ -55,7 +55,9 @@ async def test_all_strategies_real_data(strategy_id, pg_engine, tmp_path):
         initial_equity=_EQUITY,
         slippage_pct=_SLIPPAGE,
     )
-    session = BacktestSession(config=config, db_engine=pg_engine, results_dir=tmp_path)
+    session = BacktestSession(
+        config=config, db_engine=pg_engine, results_dir=tmp_path, db_schema=db_schema
+    )
     report = await session.run()
 
     assert report is not None
