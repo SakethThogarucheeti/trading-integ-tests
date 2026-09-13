@@ -11,6 +11,7 @@ BacktestSession.
 from __future__ import annotations
 
 import sys
+import uuid
 from pathlib import Path
 
 import pytest
@@ -21,6 +22,12 @@ from trading.app.database import init_db
 
 # Add strategy/testing/ to path so `import testing` resolves
 sys.path.insert(0, str(Path(__file__).parent))
+
+
+@pytest.fixture
+def db_schema() -> str:
+    """A unique, isolated scratch schema per test — never ``"public"``."""
+    return f"test_{uuid.uuid4().hex[:8]}"
 
 
 @pytest.fixture(scope="session")

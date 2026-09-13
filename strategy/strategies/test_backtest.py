@@ -47,11 +47,12 @@ def _algo(name: str = "test") -> AlgoSettings:
     )
 
 
-async def _run(config, pg_engine, tmp_path):
+async def _run(config, pg_engine, db_schema, tmp_path):
     session = BacktestSession(
         config=config,
         db_engine=pg_engine,
         results_dir=tmp_path,
+        db_schema=db_schema,
     )
     return await session.run()
 
@@ -61,7 +62,7 @@ async def _run(config, pg_engine, tmp_path):
 # ---------------------------------------------------------------------------
 
 
-async def test_backtest_completes_without_error(pg_engine, tmp_path):
+async def test_backtest_completes_without_error(pg_engine, db_schema, tmp_path):
     """A basic backtest run must complete and return a BacktestReport."""
     # 250 bars: default warmup_candles is 200, so this leaves a modest margin
     # of live bars without paying for hundreds of unneeded ones (each bar is
@@ -75,7 +76,7 @@ async def test_backtest_completes_without_error(pg_engine, tmp_path):
         initial_equity=100_000.0,
         slippage_pct=0.05,
     )
-    report = await _run(config, pg_engine, tmp_path)
+    report = await _run(config, pg_engine, db_schema, tmp_path)
 
     assert report is not None
     assert report.session_id != ""
@@ -83,7 +84,7 @@ async def test_backtest_completes_without_error(pg_engine, tmp_path):
     assert report.started_at <= report.finished_at
 
 
-async def test_backtest_equity_curve_starts_at_initial_equity(pg_engine, tmp_path):
+async def test_backtest_equity_curve_starts_at_initial_equity(pg_engine, db_schema, tmp_path):
     """The first row of the equity curve must equal initial_equity."""
     # Only the equity curve's first row is asserted -- doesn't need bars
     # beyond warmup(200) plus a small margin to prove the run completes.
@@ -96,12 +97,12 @@ async def test_backtest_equity_curve_starts_at_initial_equity(pg_engine, tmp_pat
         initial_equity=50_000.0,
         slippage_pct=0.0,
     )
-    report = await _run(config, pg_engine, tmp_path)
+    report = await _run(config, pg_engine, db_schema, tmp_path)
 
     assert float(report.equity_curve["equity"][0]) == pytest.approx(50_000.0)
 
 
-async def test_backtest_metrics_in_valid_range(pg_engine, tmp_path):
+async def test_backtest_metrics_in_valid_range(pg_engine, db_schema, tmp_path):
     """Metric values must be in their expected ranges regardless of market data."""
     df = random_walk_ohlcv(n_bars=250, seed=7, start=_START)
     config = BacktestConfig(
@@ -112,7 +113,7 @@ async def test_backtest_metrics_in_valid_range(pg_engine, tmp_path):
         initial_equity=100_000.0,
         slippage_pct=0.05,
     )
-    report = await _run(config, pg_engine, tmp_path)
+    report = await _run(config, pg_engine, db_schema, tmp_path)
 
     assert 0.0 <= report.max_drawdown <= 1.0
     assert 0.0 <= report.win_rate <= 1.0
@@ -120,7 +121,7 @@ async def test_backtest_metrics_in_valid_range(pg_engine, tmp_path):
     assert report.total_trades >= 0
 
 
-async def test_backtest_crash_scenario_produces_drawdown(pg_engine, tmp_path):
+async def test_backtest_crash_scenario_produces_drawdown(pg_engine, db_schema, tmp_path):
     """A 30% crash mid-session should produce valid metrics regardless of trade count."""
     # crash_bar must land after warmup(200) with room on both sides.
     df = crash_scenario(n_bars=280, crash_bar=230, crash_pct=0.30, seed=0, start=_START)
@@ -132,13 +133,13 @@ async def test_backtest_crash_scenario_produces_drawdown(pg_engine, tmp_path):
         initial_equity=100_000.0,
         slippage_pct=0.05,
     )
-    report = await _run(config, pg_engine, tmp_path)
+    report = await _run(config, pg_engine, db_schema, tmp_path)
 
     assert report.max_drawdown >= 0.0
     assert report.final_equity > 0.0
 
 
-async def test_backtest_trending_market_generates_signals(pg_engine, tmp_path):
+async def test_backtest_trending_market_generates_signals(pg_engine, db_schema, tmp_path):
     """A strong uptrend should trigger at least one EMA crossover signal."""
     # Kept larger than the other cases here: this one needs an actual
     # crossover to fire post-warmup(200), not just a report to be produced.
@@ -151,14 +152,14 @@ async def test_backtest_trending_market_generates_signals(pg_engine, tmp_path):
         initial_equity=100_000.0,
         slippage_pct=0.05,
     )
-    report = await _run(config, pg_engine, tmp_path)
+    report = await _run(config, pg_engine, db_schema, tmp_path)
 
     assert report.total_trades >= 1, (
         "Trending market over 500 bars should generate at least one EMA crossover trade"
     )
 
 
-async def test_backtest_html_report_generated(pg_engine, tmp_path):
+async def test_backtest_html_report_generated(pg_engine, db_schema, tmp_path):
     """BacktestReport.to_html() must return a non-empty HTML string with Plotly."""
     df = trending_market(n_bars=220, drift=0.0003, seed=3, start=_START)
     config = BacktestConfig(
@@ -168,14 +169,14 @@ async def test_backtest_html_report_generated(pg_engine, tmp_path):
         loader=_InMemoryLoader(df),
         initial_equity=100_000.0,
     )
-    report = await _run(config, pg_engine, tmp_path)
+    report = await _run(config, pg_engine, db_schema, tmp_path)
 
     html = report.to_html()
     assert "<html" in html.lower()
     assert "plotly" in html.lower()
 
 
-async def test_backtest_session_report_persisted(pg_engine, tmp_path):
+async def test_backtest_session_report_persisted(pg_engine, db_schema, tmp_path):
     """After run(), the report JSON and HTML must be written to results_dir."""
     df = trending_market(n_bars=220, drift=0.0003, seed=5, start=_START)
     config = BacktestConfig(
@@ -185,7 +186,7 @@ async def test_backtest_session_report_persisted(pg_engine, tmp_path):
         loader=_InMemoryLoader(df),
         initial_equity=100_000.0,
     )
-    report = await _run(config, pg_engine, tmp_path)
+    report = await _run(config, pg_engine, db_schema, tmp_path)
 
     session_dir = tmp_path / report.session_id
     assert (session_dir / "report.json").exists(), "report.json must be written"
@@ -222,7 +223,7 @@ def _real_algo(name: str, symbols: list[str]) -> AlgoSettings:
 @pytest.mark.skipif(
     not _DATA_DIR.exists(), reason="data/ directory not found — run uv run fetch-data first"
 )
-async def test_ema_crossover_real_data_completes(pg_engine, tmp_path):
+async def test_ema_crossover_real_data_completes(pg_engine, db_schema, tmp_path):
     """EMA crossover on real Zerodha data must complete and produce a valid report."""
     config = BacktestConfig(
         algo=_real_algo("ema_real", _REAL_DATA_SYMBOLS),
@@ -232,7 +233,7 @@ async def test_ema_crossover_real_data_completes(pg_engine, tmp_path):
         initial_equity=_REAL_EQUITY,
         slippage_pct=0.05,
     )
-    report = await _run(config, pg_engine, tmp_path)
+    report = await _run(config, pg_engine, db_schema, tmp_path)
 
     assert report is not None
     assert report.total_trades >= 0
@@ -258,7 +259,7 @@ async def test_ema_crossover_real_data_completes(pg_engine, tmp_path):
     not _DATA_DIR.exists(), reason="data/ directory not found — run uv run fetch-data first"
 )
 @pytest.mark.parametrize("symbol", _REAL_DATA_SYMBOLS)
-async def test_ema_crossover_per_symbol(pg_engine, tmp_path, symbol):
+async def test_ema_crossover_per_symbol(pg_engine, db_schema, tmp_path, symbol):
     """EMA crossover on each symbol individually — surfaces per-symbol edge cases."""
     config = BacktestConfig(
         algo=_real_algo(f"ema_{symbol.lower()}", [symbol]),
@@ -268,7 +269,7 @@ async def test_ema_crossover_per_symbol(pg_engine, tmp_path, symbol):
         initial_equity=_REAL_EQUITY,
         slippage_pct=0.05,
     )
-    report = await _run(config, pg_engine, tmp_path)
+    report = await _run(config, pg_engine, db_schema, tmp_path)
 
     assert report.final_equity > 0
     print(
